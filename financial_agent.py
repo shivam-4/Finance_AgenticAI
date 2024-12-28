@@ -246,8 +246,7 @@ def main():
                         # AI Analysis
                         st.markdown("### AI Analysis")
                         query = f"Provide a {analysis_type.lower()} for {stock_symbol}."
-                        response = st.session_state.multi_ai_agent.get_response(query)
-                        st.markdown(response)
+                        response = st.session_state.multi_ai_agent.print_response(query, stream=True)
                         
                         # Add to analysis history
                         st.session_state.analysis_history.append({
