@@ -8,15 +8,10 @@ from phi.model.groq import Groq
 from phi.tools.yfinance import YFinanceTools
 from phi.tools.duckduckgo import DuckDuckGo
 from phi.tools.googlesearch import GoogleSearch
-from os import getenv
-from dotenv import load_dotenv
 import yfinance as yf
 
-# Load environment variables
-load_dotenv()
-
-# Your predefined Groq API key
-GROQ_API_KEY = "YOUR_GROQ_API_KEY_HERE"  # Replace with your actual API key
+# Get API key from Streamlit secrets
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 
 # Page configuration
 st.set_page_config(
@@ -115,7 +110,70 @@ def initialize_agents():
             st.error(f"Error initializing agents: {str(e)}")
             return False
 
-[Previous functions remain the same: get_stock_data, create_price_chart, create_volume_chart, display_metrics]
+def get_stock_data(symbol):
+    """Fetch stock data using yfinance"""
+    try:
+        stock = yf.Ticker(symbol)
+        info = stock.info
+        hist = stock.history(period="1y")
+        return info, hist
+    except Exception as e:
+        st.error(f"Error fetching stock data: {str(e)}")
+        return None, None
+
+def create_price_chart(hist_data, symbol):
+    """Create an interactive price chart using plotly"""
+    fig = go.Figure()
+    fig.add_trace(go.Candlestick(
+        x=hist_data.index,
+        open=hist_data['Open'],
+        high=hist_data['High'],
+        low=hist_data['Low'],
+        close=hist_data['Close'],
+        name='Price'
+    ))
+    
+    fig.update_layout(
+        title=f'{symbol} Stock Price',
+        yaxis_title='Price',
+        template='plotly_white',
+        xaxis_rangeslider_visible=False
+    )
+    return fig
+
+def create_volume_chart(hist_data):
+    """Create volume chart using plotly"""
+    fig = px.bar(hist_data, x=hist_data.index, y='Volume')
+    fig.update_layout(
+        title='Trading Volume',
+        yaxis_title='Volume',
+        template='plotly_white'
+    )
+    return fig
+
+def display_metrics(info):
+    """Display key metrics in a grid"""
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("Market Cap", f"${info.get('marketCap', 'N/A'):,.0f}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("P/E Ratio", f"{info.get('trailingPE', 'N/A'):,.2f}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("52 Week High", f"${info.get('fiftyTwoWeekHigh', 'N/A'):,.2f}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col4:
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("52 Week Low", f"${info.get('fiftyTwoWeekLow', 'N/A'):,.2f}")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def main():
     # Sidebar
