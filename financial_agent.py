@@ -110,6 +110,21 @@ def initialize_agents():
             st.error(f"Error initializing agents: {str(e)}")
             return False
 
+def get_symbol_from_name(stock_name):
+    """Fetch stock symbol from full stock name"""
+    try:
+        # Example using yfinance to search for the stock symbol based on name
+        ticker = yf.Ticker(stock_name)
+        stock_info = ticker.info
+        if 'symbol' in stock_info:
+            return stock_info['symbol']
+        else:
+            st.error(f"Stock symbol not found for {stock_name}")
+            return None
+    except Exception as e:
+        st.error(f"Error finding symbol for {stock_name}: {str(e)}")
+        return None
+
 def get_stock_data(symbol):
     """Fetch stock data using yfinance"""
     try:
@@ -201,12 +216,12 @@ def main():
                     st.session_state.watchlist.remove(symbol)
 
     # Main content
-    st.markdown('<h1 class="stock-header">🤖 Advanced Stock Market Analysis</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="stock-header">🤖 Advanced Stock Market Analysis By Shivam Shukla</h1>', unsafe_allow_html=True)
     
     # Search and Analysis Section
     col1, col2 = st.columns([2, 1])
     with col1:
-        stock_symbol = st.text_input("Enter Stock Symbol (e.g., NVDA, AAPL)", "")
+        stock_symbol = st.text_input("Enter Stock Symbol or Full Name (e.g., NVIDIA, TCS)", "")
     with col2:
         date_range = st.selectbox(
             "Select Time Range",
@@ -215,8 +230,14 @@ def main():
 
     if st.button("Analyze", type="primary"):
         if not stock_symbol:
-            st.error("Please enter a stock symbol.")
+            st.error("Please enter a stock symbol or name.")
             return
+
+        # If the user enters a full stock name, convert it to symbol
+        if not stock_symbol.upper() in ["AAPL", "GOOG", "NVDA", "TCS", "RELIANCE"]:
+            stock_symbol = get_symbol_from_name(stock_symbol)
+            if stock_symbol is None:
+                return
 
         try:
             # Initialize agents
